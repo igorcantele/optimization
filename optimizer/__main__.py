@@ -33,7 +33,7 @@ def main():
 
     # create an initial population of 300 individuals (where
     # each individual is a list of integers)
-    pop = toolbox.population(n=2)
+    pop = toolbox.population(n=500)
 
     # CXPB  is the probability with which two individuals are crossed
     # MUTPB is the probability for mutating an individual
@@ -46,7 +46,7 @@ def main():
     fits = [ind.fitness.values[0] for ind in pop]
     generation = 0
 
-    while min(fits) > 0 and generation < 3:
+    while min(fits) > 0 and generation < 200:
         print(f"Generation {generation}")
         # Select the next generation individuals
         old_offspring = toolbox.select(pop, len(pop))
@@ -92,8 +92,8 @@ def save_to_pickle(matrix, file):
         pickle.dump(matrix, f)
 
 if __name__ == "__main__":
-    import multiprocessing
-    pool = multiprocessing.Pool()
+    from mpi4py.futures import MPIPoolExecutor
+    pool = MPIPoolExecutor()
     toolbox.register("map", pool.map)
     fits, best= main()
     save_to_pickle({"fits": fits, "best":best}, "prova_super.pkl")
