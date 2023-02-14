@@ -33,11 +33,11 @@ def compare(num_perc, num_dens):
         signal_lookup = np.array([0, 1, 1, 2, 2])
 
         # When a GrC has a connection it is registered in the activity table
-        for idx, fiber in enumerate(active_fibers):
-            if len(conn_map.size) > 2:
-                active_conn_mask = conn_map[:, 0] == idx
-                active_grc = conn_map[active_conn_mask, 1]
-                activity_table[active_grc] += 1
+        if len(conn_map.shape) > 1:
+            for idx, fiber in enumerate(active_fibers):
+                    active_conn_mask = conn_map[:, 0] == idx
+                    active_grc = conn_map[active_conn_mask, 1]
+                    activity_table[active_grc] += 1
 
         # Converting activity into signal
         grc_signals = signal_lookup[activity_table]
