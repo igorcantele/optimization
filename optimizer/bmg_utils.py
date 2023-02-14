@@ -32,6 +32,6 @@ def get_conn(env, fibers):
     granular_cells = gr.place(env, GRCS_DENSITY)
     left_mask = granular_cells[:,0] > 0
     bottom_mask = granular_cells[:,1] > 0
-    granular_cells = granular_cells[left_mask & bottom_mask]
+    granular_cells = granular_cells[left_mask & bottom_mask] // 42
     conn_map = con.connect(granular_cells, fibers)
-    return conn_map, granular_cells // 30
+    return conn_map, granular_cells //

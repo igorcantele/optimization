@@ -6,19 +6,31 @@ from .morph import open_file, from_tree_to_morph, write_pkl, open_pkl
 from .bmg_utils import get_fibers, get_conn, filter_active
 
 import plotly.graph_objects as go
-map = {
-    "C:\\Users\\igorc\\Desktop\\dbbs\\img_tool\\cell img\\slice_3.jpg": "prova"
-}
+
+from pathlib import Path
+
+path = Path(__file__).parent.parent
+path_file = str(path) + "/activity_data"
+map = open_pkl(path_file)
 def max_min(num, low=0, up=1):
     up = min(num, up)
     return max(up, low)
+# for idx in range(len(map["slice_1_stim.jpg"])):
+#     go.Figure().add_traces(
+#         go.Heatmap(z=map["slice_1_stim.jpg"][idx])
+#     ).update_yaxes(
+#     scaleanchor="x",
+#     scaleratio=1,
+# ).show()
 
 def compare(num_perc, num_dens):
     num_perc = max_min(num_perc)
     num_dens = max_min(num_dens)
     for key in map.keys():
+        if key != "slice_1_stim.jpg":
+            continue
         # Setup, extracting info from the pickle file
-        tree, points, electrode_pos = open_file(key)
+        tree, points, electrode_pos = open_file("C:\\Users\\igorc\\Desktop\\dbbs\\img_tool\\cell img\\"+key)
         morph = from_tree_to_morph(tree, points)
         morph.simplify(to_microm(50))
 
@@ -46,13 +58,11 @@ def compare(num_perc, num_dens):
         aggregrated_activity = np.zeros((64, 64))
         for sig, grc in zip(grc_signals, grcs):
             aggregrated_activity[int(grc[0]), int(grc[1])] += sig
-
         # Standardizing aggregated activity and getting standardized experimental activity
+        if np.max(aggregrated_activity):
         aggregrated_activity = aggregrated_activity / np.max(aggregrated_activity)
-        from pathlib import Path
-        path = Path(__file__).parent.parent
-        path_file = str(path) + "/" + map[key]
-        experimental_activity = open_pkl(path_file)
+
+        experimental_activity = map[key]
 
         # Calculating error
         errors = []
@@ -60,15 +70,4 @@ def compare(num_perc, num_dens):
             error = np.abs(np.sum(aggregrated_activity - trial ** 2) / np.sum(trial))
             errors.append(error)
         return errors
-# active = origins.reshape((-1, 3))[:num] // 30
-# inactive = origins.reshape((-1, 3))[num:] // 30
-# go.Figure().add_traces([
-#     go.Heatmap(z=aggregrated_activity),
-#     go.Scatter(x=active[:,1], y=active[:,0], name="active origins", mode="markers+lines"),
-#     go.Scatter(x=inactive[:,1], y=inactive[:,0], name="inactive origins", mode="markers+lines"),
-#     go.Scatter(x=grcs[activity_table > 0][:,1], y=grcs[activity_table > 0][:,0], name="active GrCs", mode="markers"),
-#     go.Scatter(x=grcs[activity_table == 0][:,1], y=grcs[activity_table == 0][:,0], name="inactive GrCs", mode="markers")
-# ]).update_yaxes(
-#     scaleanchor = "x",
-#     scaleratio = 1,
-#   ).show()
+

@@ -107,5 +107,8 @@ if __name__ == "__main__":
     pool = MPIPoolExecutor()
     toolbox.register("map", pool.map)
     fits, best= main()
-    save_to_pickle({"fits": fits, "best":best}, "prova_super.pkl")
+    from pathlib import Path
+    path = Path(__file__).parent.parent
+    path_file = str(path) + "/prova_super.pkl"
+    save_to_pickle({"fits": fits, "best":best}, path_file)
     pool.close()
