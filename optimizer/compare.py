@@ -49,7 +49,7 @@ def compare(num_perc, num_dens):
         # Standardizing aggregated activity and getting standardized experimental activity
         aggregrated_activity = aggregrated_activity / np.max(aggregrated_activity)
         from pathlib import Path
-        path = Path(__file__).parent.parent.parent
+        path = Path(__file__).parent.parent
         path_file = str(path) + "/" + map[key]
         experimental_activity = open_pkl(path_file)
 
