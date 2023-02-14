@@ -21,7 +21,7 @@ def open_pkl(name):
         return pickle.load(f)
 
 def open_file(image):
-    path = Path(__file__).parent.parent
+    path = Path(__file__).parent
     path_file = str(path) + "/imcur_prova"
     tree = open_pkl(path_file)[
         image
