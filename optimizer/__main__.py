@@ -13,7 +13,7 @@ elif len(sys.argv) == 1:
     POPULATION = 500
 else:
     POPULATION = 500
-    GENERATION = 200
+    GENERATION = 100
 def eval_err(individual):
     error = compare(individual[0], individual[1])
     return np.sum(error)
