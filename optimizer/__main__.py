@@ -3,6 +3,17 @@ from .compare import compare
 import numpy as np
 import random
 individuals = 10
+import sys
+
+if len(sys.argv) == 2:
+    GENERATION = sys.argv[0]
+    POPULATION = sys.argv[1]
+elif len(sys.argv) == 1:
+    GENERATION = sys.argv[0]
+    POPULATION = 500
+else:
+    POPULATION = 500
+    GENERATION = 200
 def eval_err(individual):
     error = compare(individual[0], individual[1])
     return np.sum(error)
@@ -33,7 +44,7 @@ def main():
 
     # create an initial population of 300 individuals (where
     # each individual is a list of integers)
-    pop = toolbox.population(n=500)
+    pop = toolbox.population(n=POPULATION)
 
     # CXPB  is the probability with which two individuals are crossed
     # MUTPB is the probability for mutating an individual
@@ -46,7 +57,7 @@ def main():
     fits = [ind.fitness.values[0] for ind in pop]
     generation = 0
 
-    while min(fits) > 0 and generation < 200:
+    while min(fits) > 0 and generation < GENERATION:
         print(f"Generation {generation}")
         # Select the next generation individuals
         old_offspring = toolbox.select(pop, len(pop))
