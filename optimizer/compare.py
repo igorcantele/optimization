@@ -60,7 +60,7 @@ def compare(num_perc, num_dens):
             aggregrated_activity[int(grc[0]), int(grc[1])] += sig
         # Standardizing aggregated activity and getting standardized experimental activity
         if np.max(aggregrated_activity):
-        aggregrated_activity = aggregrated_activity / np.max(aggregrated_activity)
+            aggregrated_activity = aggregrated_activity / np.max(aggregrated_activity)
 
         experimental_activity = map[key]
 
