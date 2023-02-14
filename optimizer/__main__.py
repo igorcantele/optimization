@@ -1,85 +1,100 @@
-from bmg.util.measures import to_microm, to_channel
-from bmg.environments.cilindrical import SlicedMulti3DCilinderEnv
-import numpy as np
-
-from morph import open_file, from_tree_to_morph, write_pkl, open_pkl
-from bmg_utils import get_fibers, get_conn, filter_active
-
-import plotly.graph_objects as go
-map = {
-    "C:\\Users\\igorc\\Desktop\\dbbs\\img_tool\\cell img\\slice_3.jpg": "prova"
-}
-
-import datetime
-def optimize(num_perc, num_dens):
-    for key in map.keys():
-        start_time = datetime.datetime.now()
-        # Setup, extracting info from the pickle file
-        tree, points, electrode_pos = open_file(key)
-        morph = from_tree_to_morph(tree, points)
-        morph.simplify(to_microm(50))
-
-        # Generating environment and active fibers
-        env = SlicedMulti3DCilinderEnv(morph)
-        origins, fibers = get_fibers(env, morph)
-        active_fibers = filter_active(electrode_pos, num_perc, num_dens, fibers)
-
-        # Calculating connections based on the active fibers and creating tool to convert activity in signal
-        conn_map, grcs = get_conn(env, active_fibers)
-        activity_table = np.zeros(len(grcs), dtype=int)
-        signal_lookup = np.array([0, 1, 1, 2, 2])
-
-        # When a GrC has a connection it is registered in the activity table
-        for idx, fiber in enumerate(active_fibers):
-            active_conn_mask = conn_map[:, 0] == idx
-            active_grc = conn_map[active_conn_mask, 1]
-            activity_table[active_grc] += 1
-
-        # Converting activity into signal
-        grc_signals = signal_lookup[activity_table]
-
-        # Creating 64x64 matrix to compare signal with experimental data
-        aggregrated_activity = np.zeros((64, 64))
-        for sig, grc in zip(grc_signals, grcs):
-            aggregrated_activity[int(grc[0]), int(grc[1])] += sig
-
-        # Standardizing aggregated activity and getting standardized experimental activity
-        aggregrated_activity = aggregrated_activity / np.max(aggregrated_activity)
-        from pathlib import Path
-        path = Path(__file__).parent.parent.parent
-        path_file = str(path) + "/" + map[key]
-        experimental_activity = open_pkl(path_file)
-
-        # Calculating error
-        for trial in experimental_activity:
-            error = np.abs(np.sum(aggregrated_activity - trial ** 2) / np.sum(trial))
-            print(error)
-
-        end_time = datetime.datetime.now()
-        print(end_time - start_time)
-# active = origins.reshape((-1, 3))[:num] // 30
-# inactive = origins.reshape((-1, 3))[num:] // 30
-# go.Figure().add_traces([
-#     go.Heatmap(z=aggregrated_activity),
-#     go.Scatter(x=active[:,1], y=active[:,0], name="active origins", mode="markers+lines"),
-#     go.Scatter(x=inactive[:,1], y=inactive[:,0], name="inactive origins", mode="markers+lines"),
-#     go.Scatter(x=grcs[activity_table > 0][:,1], y=grcs[activity_table > 0][:,0], name="active GrCs", mode="markers"),
-#     go.Scatter(x=grcs[activity_table == 0][:,1], y=grcs[activity_table == 0][:,0], name="inactive GrCs", mode="markers")
-# ]).update_yaxes(
-#     scaleanchor = "x",
-#     scaleratio = 1,
-#   ).show()
-
-optimize(.5, .8)
-
 from deap import base, creator, tools
+from .compare import compare
+import numpy as np
 import random
 individuals = 10
+def eval_err(individual):
+    error = compare(individual[0], individual[1])
+    return np.sum(error)
+
+def custom_mutation(individual, indpb):
+    return tools.mutGaussian(individual, 0, .1, indpb)
 
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMin)
 toolbox = base.Toolbox()
-toolbox.register("error", random.random())
+toolbox.register("attr_bool", random.random)
+
+# Structure initializers
 toolbox.register("individual", tools.initRepeat, creator.Individual,
-                 toolbox.attribute, n=individuals)
+    toolbox.attr_bool, 2)
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+
+# genetic operators
+toolbox.register("evaluate", eval_err)
+toolbox.register("mate", tools.cxTwoPoint)
+toolbox.register("mutate", custom_mutation, indpb=0.05)
+toolbox.register("select", tools.selTournament, tournsize=3)
+
+
+def main():
+    stats = []
+    random.seed(64)
+
+    # create an initial population of 300 individuals (where
+    # each individual is a list of integers)
+    pop = toolbox.population(n=2)
+
+    # CXPB  is the probability with which two individuals are crossed
+    # MUTPB is the probability for mutating an individual
+    CXPB, MUTPB = 0.5, 0.2
+
+    fitnesses = list(map(toolbox.evaluate, pop))
+    for ind, fit in zip(pop, fitnesses):
+        ind.fitness.values = [fit]
+
+    fits = [ind.fitness.values[0] for ind in pop]
+    generation = 0
+
+    while min(fits) > 0 and generation < 3:
+        print(f"Generation {generation}")
+        # Select the next generation individuals
+        old_offspring = toolbox.select(pop, len(pop))
+        # Clone the selected individuals
+        offspring = list(map(toolbox.clone, old_offspring))
+
+        for child1, child2 in zip(offspring[::2], offspring[1::2]):
+            if random.random() < CXPB:
+                toolbox.mate(child1, child2)
+                del child1.fitness.values
+                del child2.fitness.values
+
+        for mutant in offspring:
+            if random.random() < MUTPB:
+                toolbox.mutate(mutant)
+                del mutant.fitness.values
+
+        # Evaluate the individuals with an invalid fitness
+        invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+        fitnesses = map(toolbox.evaluate, invalid_ind)
+        for ind, fit in zip(invalid_ind, fitnesses):
+            ind.fitness.values = [fit]
+
+        pop[:] = offspring
+
+        # Gather all the fitnesses in one list and print the stats
+        fits = [ind.fitness.values[0] for ind in pop]
+
+        length = len(pop)
+        mean = sum(fits) / length
+        sum2 = sum(x * x for x in fits)
+        std = abs(sum2 / length - mean ** 2) ** 0.5
+
+        stats.append(fits)
+        best_ind = tools.selBest(pop, 1)[0]
+
+        generation += 1
+    return stats, best_ind
+
+import pickle
+def save_to_pickle(matrix, file):
+    with open(file, "wb") as f:
+        pickle.dump(matrix, f)
+
+if __name__ == "__main__":
+    import multiprocessing
+    pool = multiprocessing.Pool()
+    toolbox.register("map", pool.map)
+    fits, best= main()
+    save_to_pickle({"fits": fits, "best":best}, "prova_super.pkl")
+    pool.close()
