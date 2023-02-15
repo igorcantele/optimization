@@ -5,15 +5,16 @@ import random
 individuals = 10
 import sys
 
-if len(sys.argv) == 2:
-    GENERATION = sys.argv[0]
-    POPULATION = sys.argv[1]
-elif len(sys.argv) == 1:
-    GENERATION = sys.argv[0]
+if len(sys.argv) == 3:
+    GENERATION = int(sys.argv[1])
+    POPULATION = int(sys.argv[2])
+elif len(sys.argv) == 2:
+    GENERATION = int(sys.argv[1])
     POPULATION = 500
 else:
     POPULATION = 500
     GENERATION = 100
+
 def eval_err(individual):
     error = compare(individual[0], individual[1])
     return np.sum(error)
