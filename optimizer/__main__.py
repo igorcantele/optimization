@@ -106,6 +106,8 @@ def save_to_pickle(matrix, file):
 if __name__ == "__main__":
     from mpi4py.futures import MPIPoolExecutor
     pool = MPIPoolExecutor()
+    from mpi4py import MPI
+    print("MPI processes:", MPI.COMM_WORLD.Get_size())
     toolbox.register("map", pool.map)
     fits, best= main()
     from pathlib import Path

@@ -23,7 +23,7 @@ def max_min(num, low=0, up=1):
 #     scaleratio=1,
 # ).show()
 
-def compare(num_perc, num_dens):
+def compare(num_perc, num_dens, plot=False):
     num_perc = max_min(num_perc)
     num_dens = max_min(num_dens)
     for key in map.keys():
@@ -61,6 +61,14 @@ def compare(num_perc, num_dens):
         # Standardizing aggregated activity and getting standardized experimental activity
         if np.max(aggregrated_activity):
             aggregrated_activity = aggregrated_activity / np.max(aggregrated_activity)
+
+        if plot:
+            go.Figure().add_traces(
+                go.Heatmap(z=aggregrated_activity)
+            ).update_yaxes(
+                scaleanchor="x",
+                scaleratio=1,
+            ).show()
 
         experimental_activity = map[key]
 
