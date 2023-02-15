@@ -112,4 +112,3 @@ if __name__ == "__main__":
     path = Path(__file__).parent.parent
     path_file = str(path) + "/prova_super.pkl"
     save_to_pickle({"fits": fits, "best":best}, path_file)
-    pool.close()
