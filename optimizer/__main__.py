@@ -110,5 +110,5 @@ if __name__ == "__main__":
     fits, best= main()
     from pathlib import Path
     path = Path(__file__).parent.parent
-    path_file = str(path) + "/prova_super.pkl"
+    path_file = str(path) + f"/{str(GENERATION)}_{str(POPULATION)}-{str(int(random.randint(0, 10000) * random.random()))}.pkl"
     save_to_pickle({"fits": fits, "best":best}, path_file)
